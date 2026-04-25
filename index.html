@@ -1,282 +1,71 @@
-import { useState, useEffect, useRef } from “react”;
-
-const VERSES = [
-{
-jp: “天にいます私たちの父よ”,
-pr: “텐니 이마스 와타시타치노 치치요”,
-kr: “하늘에 계신 우리 아버지여”,
-dur: 5500,
-},
-{
-jp: “御名をあがめさせたまえ”,
-pr: “미나오 아가메사세타마에”,
-kr: “이름이 거룩히 여김을 받으시오며”,
-dur: 5000,
-},
-{
-jp: “御国を来たらせたまえ”,
-pr: “미쿠니오 키타라세타마에”,
-kr: “나라가 임하시오며”,
-dur: 4000,
-},
-{
-jp: “御心の天になるごとく地にもなさせたまえ”,
-pr: “미코코로노 텐니 나루고토쿠 치니모 나사세타마에”,
-kr: “뜻이 하늘에서 이루어진 것 같이 땅에서도 이루어지이다”,
-dur: 6500,
-},
-{
-jp: “私たちの日ごとの糧を今日もお与えください”,
-pr: “와타시타치노 히고토노 카테오 쿄모 오아타에쿠다사이”,
-kr: “오늘 우리에게 일용할 양식을 주시옵고”,
-dur: 6000,
-},
-{
-jp: “私たちの負い目をお赦しください”,
-pr: “와타시타치노 오이메오 오유루시쿠다사이”,
-kr: “우리 죄를 사하여 주시옵고”,
-dur: 5500,
-},
-{
-jp: “試みに合わせないで悪からお救いください”,
-pr: “코코로미니 아와세나이데 와루카라 오스쿠이쿠다사이”,
-kr: “우리를 시험에 들게 하지 마시옵고 다만 악에서 구하시옵소서”,
-dur: 6500,
-},
-{
-jp: “国と力と栄えとは限りなくあなたのものです”,
-pr: “쿠니토 치카라토 사카에토와 카기리나쿠 아나타노 모노데스”,
-kr: “나라와 권세와 영광이 아버지께 영원히 있사옵나이다”,
-dur: 7000,
-},
-{
-jp: “アーメン”,
-pr: “아　멘”,
-kr: “아　멘”,
-dur: 4500,
-},
-];
-
-function KaraLine({ text, color, sweepDur, delay, started, fontSize }) {
-const [clipPct, setClipPct] = useState(100);
-const raf = useRef(null);
-const startTime = useRef(null);
-
-useEffect(() => {
-setClipPct(100);
-if (!started) return;
-const begin = Date.now() + delay;
-const tick = () => {
-const now = Date.now();
-if (now < begin) { raf.current = requestAnimationFrame(tick); return; }
-if (!startTime.current) startTime.current = now;
-const elapsed = now - startTime.current;
-const pct = Math.max(0, 100 - (elapsed / sweepDur) * 100);
-setClipPct(pct);
-if (pct > 0) raf.current = requestAnimationFrame(tick);
-};
-raf.current = requestAnimationFrame(tick);
-return () => { cancelAnimationFrame(raf.current); startTime.current = null; };
-}, [started, sweepDur, delay]);
-
-return (
-<div style={{ position: “relative”, display: “inline-block”, lineHeight: 1, fontSize }}>
-{/* base */}
-<span style={{ color: “rgba(255,255,255,0.52)”, whiteSpace: “nowrap” }}>{text}</span>
-{/* highlight */}
-<span style={{
-position: “absolute”, top: 0, left: 0,
-color, whiteSpace: “nowrap”,
-clipPath: `inset(0 ${clipPct}% 0 0)`,
-fontSize,
-}}>{text}</span>
-</div>
-);
-}
-
-export default function App() {
-const [phase, setPhase] = useState(“intro”); // intro | playing | done
-const [idx, setIdx] = useState(0);
-const [started, setStarted] = useState(false);
-const [progress, setProgress] = useState(0);
-const [fade, setFade] = useState(1);
-const timerRef = useRef(null);
-const rafRef = useRef(null);
-const startTimeRef = useRef(null);
-
-const verse = VERSES[idx];
-
-function startPlay() {
-setPhase(“playing”);
-setIdx(0);
-setStarted(false);
-setTimeout(() => setStarted(true), 100);
-runProgress(0);
-}
-
-function runProgress(vIdx) {
-const dur = VERSES[vIdx].dur;
-startTimeRef.current = Date.now();
-setProgress(0);
-const tick = () => {
-const elapsed = Date.now() - startTimeRef.current;
-setProgress(Math.min(1, elapsed / dur));
-if (elapsed < dur) rafRef.current = requestAnimationFrame(tick);
-};
-rafRef.current = requestAnimationFrame(tick);
-
-```
-timerRef.current = setTimeout(() => {
-  setFade(0);
-  setTimeout(() => {
-    const next = vIdx + 1;
-    if (next < VERSES.length) {
-      setIdx(next);
-      setStarted(false);
-      setFade(1);
-      setTimeout(() => setStarted(true), 80);
-      runProgress(next);
-    } else {
-      setPhase("done");
-      setFade(1);
-    }
-  }, 600);
-}, dur);
-```
-
-}
-
-useEffect(() => () => {
-clearTimeout(timerRef.current);
-cancelAnimationFrame(rafRef.current);
-}, []);
-
-const sw = verse ? verse.dur * 0.78 : 4000;
-
-return (
-<div style={{
-width: “100vw”, height: “100vh”,
-background: “radial-gradient(ellipse at 50% 60%, #1a1a35 0%, #0a0a14 70%)”,
-display: “flex”, flexDirection: “column”,
-alignItems: “center”, justifyContent: “center”,
-fontFamily: “‘Noto Sans KR’, ‘Noto Sans JP’, sans-serif”,
-overflow: “hidden”, position: “relative”,
-}}>
-
-```
-  {/* 에메랄드 제목 */}
-  <div style={{
-    position: "absolute", top: "5%", left: "50%", transform: "translateX(-50%)",
-    fontSize: "clamp(18px, 3vw, 40px)", fontWeight: 700,
-    color: "#7fffd4", letterSpacing: "0.15em", whiteSpace: "nowrap",
-    textShadow: "0 0 12px rgba(0,255,180,0.9), 0 0 30px rgba(0,255,180,0.6), 0 0 70px rgba(0,220,160,0.4)",
-    animation: "emeraldPulse 2.8s ease-in-out infinite",
-  }}>
-    일본어로 주기도문을 도전해보세요~! 🫶
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; background:#0a0a14; overflow:hidden; }
+  #canvas { position:fixed; top:0; left:0; width:1920px; height:1080px; transform-origin:top left; font-family:'Noto Sans KR','Noto Sans JP',sans-serif; display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 60%, #1a1a35 0%, #0a0a14 70%); }
+  .stage { width:1600px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:0; }
+  .doc-title { position:absolute; top:52px; left:50%; transform:translateX(-50%); font-size:46px; font-weight:700; color:#7fffd4; letter-spacing:4px; white-space:nowrap; text-shadow:0 0 12px rgba(0,255,180,0.9),0 0 30px rgba(0,255,180,0.6),0 0 60px rgba(0,220,160,0.4); animation:emeraldPulse 2.8s ease-in-out infinite; }
+  @keyframes emeraldPulse { 0%,100%{opacity:.88;text-shadow:0 0 10px rgba(0,255,180,0.8),0 0 26px rgba(0,255,180,0.5),0 0 54px rgba(0,220,160,0.3);} 50%{opacity:1;text-shadow:0 0 16px rgba(0,255,190,1),0 0 40px rgba(0,255,180,0.75),0 0 80px rgba(0,220,160,0.55);} }
+  .verse { display:none; flex-direction:column; align-items:center; gap:32px; }
+  .verse.active { display:flex; }
+  .kara-wrap { position:relative; display:inline-block; line-height:1; transform-origin:center center; }
+  .kara-base { white-space:nowrap; color:rgba(255,255,255,0.52); }
+  .kara-hl { position:absolute; top:0; left:0; white-space:nowrap; clip-path:inset(0 100% 0 0); }
+  .kara-hl.sweep { clip-path:inset(0 0% 0 0); }
+  .jp .kara-base,.jp .kara-hl { font-size:82px; font-weight:700; letter-spacing:5px; font-family:'Noto Sans JP',sans-serif; }
+  .jp .kara-hl { color:#e8d47a; }
+  .pr .kara-base,.pr .kara-hl { font-size:65px; font-weight:400; letter-spacing:2px; }
+  .pr .kara-hl { color:rgba(255,200,100,0.95); }
+  .divider { width:240px; height:1px; background:linear-gradient(to right,transparent,rgba(255,255,255,0.2),transparent); }
+  .kr .kara-base,.kr .kara-hl { font-size:52px; font-weight:300; letter-spacing:2px; }
+  .kr .kara-hl { color:rgba(255,255,255,0.95); }
+  .progress-bar { position:absolute; bottom:48px; left:50%; transform:translateX(-50%); width:500px; height:3px; background:rgba(255,255,255,0.1); border-radius:2px; }
+  .progress-fill { height:100%; width:0%; background:linear-gradient(to right,#e8d47a,#f0a060); border-radius:2px; }
+  .verse-num { position:absolute; bottom:52px; right:80px; font-size:20px; color:rgba(255,255,255,0.2); letter-spacing:2px; }
+  #intro { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; background:#0a0a14; cursor:pointer; transition:opacity 0.8s; z-index:50; }
+  #intro.hidden { opacity:0; pointer-events:none; }
+  #intro .t1 { font-size:56px; font-weight:700; color:#e8d47a; letter-spacing:4px; }
+  #intro .t2 { font-size:24px; color:rgba(255,255,255,0.32); letter-spacing:7px; }
+  #intro .btn { margin-top:20px; padding:16px 52px; border:1.5px solid rgba(255,255,255,0.3); border-radius:40px; font-size:20px; color:rgba(255,255,255,0.6); letter-spacing:4px; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+</style>
+</head>
+<body>
+<div id="canvas">
+  <div id="intro" onclick="startPlay()">
+    <div class="t1">주기도문</div>
+    <div class="t2">主 の 祈 り</div>
+    <div class="btn">▶  시작하기</div>
   </div>
-
-  {/* 인트로 */}
-  {phase === "intro" && (
-    <div style={{ textAlign: "center", cursor: "pointer" }} onClick={startPlay}>
-      <div style={{ fontSize: "clamp(36px,6vw,80px)", fontWeight: 700, color: "#e8d47a", letterSpacing: "0.1em", marginBottom: 16 }}>주기도문</div>
-      <div style={{ fontSize: "clamp(16px,2.5vw,32px)", color: "rgba(255,255,255,0.32)", letterSpacing: "0.4em", marginBottom: 48 }}>主 の 祈 り</div>
-      <div style={{
-        padding: "14px 52px", border: "1.5px solid rgba(255,255,255,0.3)",
-        borderRadius: 40, fontSize: "clamp(14px,2vw,22px)",
-        color: "rgba(255,255,255,0.6)", letterSpacing: "0.2em",
-        animation: "pulse 2s ease-in-out infinite",
-      }}>▶ &nbsp; 시작하기</div>
-    </div>
-  )}
-
-  {/* 완료 */}
-  {phase === "done" && (
-    <div style={{ textAlign: "center", cursor: "pointer" }} onClick={startPlay}>
-      <div style={{ fontSize: "clamp(28px,4vw,56px)", fontWeight: 700, color: "#e8d47a", marginBottom: 24 }}>アーメン 🙏</div>
-      <div style={{ fontSize: "clamp(14px,2vw,24px)", color: "rgba(255,255,255,0.4)", letterSpacing: "0.3em", marginBottom: 40 }}>다시 도전하기</div>
-      <div style={{
-        padding: "12px 44px", border: "1.5px solid rgba(255,255,255,0.25)",
-        borderRadius: 40, fontSize: "clamp(13px,1.8vw,20px)",
-        color: "rgba(255,255,255,0.5)", letterSpacing: "0.15em",
-      }}>▶ &nbsp; 처음부터</div>
-    </div>
-  )}
-
-  {/* 재생 */}
-  {phase === "playing" && verse && (
-    <div style={{
-      display: "flex", flexDirection: "column", alignItems: "center",
-      gap: "clamp(16px,2.5vh,32px)",
-      opacity: fade, transition: "opacity 0.6s ease",
-      width: "90vw", maxWidth: 1400, textAlign: "center",
-    }}>
-      {/* 일본어 */}
-      <KaraLine
-        text={verse.jp}
-        color="#e8d47a"
-        sweepDur={sw}
-        delay={0}
-        started={started}
-        fontSize="clamp(28px, 5.5vw, 82px)"
-      />
-      {/* 발음 */}
-      <KaraLine
-        text={verse.pr}
-        color="rgba(255,200,100,0.95)"
-        sweepDur={sw * 0.9}
-        delay={200}
-        started={started}
-        fontSize="clamp(18px, 3.8vw, 58px)"
-      />
-      {/* 구분선 */}
-      <div style={{ width: 200, height: 1, background: "linear-gradient(to right,transparent,rgba(255,255,255,0.2),transparent)" }} />
-      {/* 한글 */}
-      <KaraLine
-        text={verse.kr}
-        color="rgba(255,255,255,0.95)"
-        sweepDur={sw * 0.85}
-        delay={400}
-        started={started}
-        fontSize="clamp(16px, 3.2vw, 50px)"
-      />
-    </div>
-  )}
-
-  {/* 진행바 */}
-  {phase === "playing" && (
-    <>
-      <div style={{
-        position: "absolute", bottom: "5%", left: "50%", transform: "translateX(-50%)",
-        width: "min(400px, 60vw)", height: 3,
-        background: "rgba(255,255,255,0.1)", borderRadius: 2,
-      }}>
-        <div style={{
-          height: "100%", width: `${progress * 100}%`,
-          background: "linear-gradient(to right,#e8d47a,#f0a060)",
-          borderRadius: 2, transition: "width 0.1s linear",
-        }} />
-      </div>
-      <div style={{
-        position: "absolute", bottom: "calc(5% + 14px)", right: "5%",
-        fontSize: "clamp(12px,1.5vw,18px)", color: "rgba(255,255,255,0.2)", letterSpacing: 2,
-      }}>
-        {idx + 1} / {VERSES.length}
-      </div>
-    </>
-  )}
-
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
-    @keyframes emeraldPulse {
-      0%,100% { text-shadow: 0 0 10px rgba(0,255,180,0.8), 0 0 26px rgba(0,255,180,0.5), 0 0 54px rgba(0,220,160,0.3); opacity:.88; }
-      50% { text-shadow: 0 0 16px rgba(0,255,190,1), 0 0 40px rgba(0,255,180,0.75), 0 0 80px rgba(0,220,160,0.55); opacity:1; }
-    }
-    @keyframes pulse {
-      0%,100% { opacity:.35; } 50% { opacity:1; }
-    }
-  `}</style>
+  <div class="stage">
+    <div class="doc-title">일본어로 주기도문을 도전해보세요~! 🫶</div>
+    <div class="verse" id="v0"><div class="kara-wrap jp"><div class="kara-base">天にいます私たちの父よ</div><div class="kara-hl" id="jp0">天にいます私たちの父よ</div></div><div class="kara-wrap pr"><div class="kara-base">텐니 이마스 와타시타치노 치치요</div><div class="kara-hl" id="pr0">텐니 이마스 와타시타치노 치치요</div></div><div class="divider"></div><div class="kara-wrap kr"><div class="kara-base">하늘에 계신 우리 아버지여</div><div class="kara-hl" id="kr0">하늘에 계신 우리 아버지여</div></div></div>
+    <div class="verse" id="v1"><div class="kara-wrap jp"><div class="kara-base">御名をあがめさせたまえ</div><div class="kara-hl" id="jp1">御名をあがめさせたまえ</div></div><div class="kara-wrap pr"><div class="kara-base">미나오 아가메사세타마에</div><div class="kara-hl" id="pr1">미나오 아가메사세타마에</div></div><div class="divider"></div><div class="kara-wrap kr"><div class="kara-base">이름이 거룩히 여김을 받으시오며</div><div class="kara-hl" id="kr1">이름이 거룩히 여김을 받으시오며</div></div></div>
+    <div class="verse" id="v2"><div class="kara-wrap jp"><div class="kara-base">御国を来たらせたまえ</div><div class="kara-hl" id="jp2">御国を来たらせたまえ</div></div><div class="kara-wrap pr"><div class="kara-base">미쿠니오 키타라세타마에</div><div class="kara-hl" id="pr2">미쿠니오 키타라세타마에</div></div><div class="divider"></div><div class="kara-wrap kr"><div class="kara-base">나라가 임하시오며</div><div class="kara-hl" id="kr2">나라가 임하시오며</div></div></div>
+    <div class="verse" id="v3"><div class="kara-wrap jp"><div class="kara-base">御心の天になるごとく地にもなさせたまえ</div><div class="kara-hl" id="jp3">御心の天になるごとく地にもなさせたまえ</div></div><div class="kara-wrap pr"><div class="kara-base">미코코로노 텐니 나루고토쿠 치니모 나사세타마에</div><div class="kara-hl" id="pr3">미코코로노 텐니 나루고토쿠 치니모 나사세타마에</div></div><div class="divider"></div><div class="kara-wrap kr"><div class="kara-base">뜻이 하늘에서 이루어진 것 같이 땅에서도 이루어지이다</div><div class="kara-hl" id="kr3">뜻이 하늘에서 이루어진 것 같이 땅에서도 이루어지이다</div></div></div>
+    <div class="verse" id="v4"><div class="kara-wrap jp"><div class="kara-base">私たちの日ごとの糧を今日もお与えください</div><div class="kara-hl" id="jp4">私たちの日ごとの糧を今日もお与えください</div></div><div class="kara-wrap pr"><div class="kara-base">와타시타치노 히고토노 카테오 쿄모 오아타에쿠다사이</div><div class="kara-hl" id="pr4">와타시타치노 히고토노 카테오 쿄모 오아타에쿠다사이</div></div><div class="divider"></div><div class="kara-wrap kr"><div class="kara-base">오늘 우리에게 일용할 양식을 주시옵고</div><div class="kara-hl" id="kr4">오늘 우리에게 일용할 양식을 주시옵고</div></div></div>
+    <div class="verse" id="v5"><div class="kara-wrap jp"><div class="kara-base">私たちの負い目をお赦しください</div><div class="kara-hl" id="jp5">私たちの負い目をお赦しください</div></div><div class="kara-wrap pr"><div class="kara-base">와타시타치노 오이메오 오유루시쿠다사이</div><div class="kara-hl" id="pr5">와타시타치노 오이메오 오유루시쿠다사이</div></div><div class="divider"></div><div class="kara-wrap kr"><div class="kara-base">우리 죄를 사하여 주시옵고</div><div class="kara-hl" id="kr5">우리 죄를 사하여 주시옵고</div></div></div>
+    <div class="verse" id="v6"><div class="kara-wrap jp"><div class="kara-base">試みに合わせないで悪からお救いください</div><div class="kara-hl" id="jp6">試みに合わせないで悪からお救いください</div></div><div class="kara-wrap pr"><div class="kara-base">코코로미니 아와세나이데 와루카라 오스쿠이쿠다사이</div><div class="kara-hl" id="pr6">코코로미니 아와세나이데 와루카라 오스쿠이쿠다사이</div></div><div class="divider"></div><div class="kara-wrap kr"><div class="kara-base">우리를 시험에 들게 하지 마시옵고 다만 악에서 구하시옵소서</div><div class="kara-hl" id="kr6">우리를 시험에 들게 하지 마시옵고 다만 악에서 구하시옵소서</div></div></div>
+    <div class="verse" id="v7"><div class="kara-wrap jp"><div class="kara-base">国と力と栄えとは限りなくあなたのものです</div><div class="kara-hl" id="jp7">国と力と栄えとは限りなくあなたのものです</div></div><div class="kara-wrap pr"><div class="kara-base">쿠니토 치카라토 사카에토와 카기리나쿠 아나타노 모노데스</div><div class="kara-hl" id="pr7">쿠니토 치카라토 사카에토와 카기리나쿠 아나타노 모노데스</div></div><div class="divider"></div><div class="kara-wrap kr"><div class="kara-base">나라와 권세와 영광이 아버지께 영원히 있사옵나이다</div><div class="kara-hl" id="kr7">나라와 권세와 영광이 아버지께 영원히 있사옵나이다</div></div></div>
+    <div class="verse" id="v8"><div class="kara-wrap jp"><div class="kara-base" style="letter-spacing:20px">アーメン</div><div class="kara-hl" id="jp8" style="letter-spacing:20px">アーメン</div></div><div class="kara-wrap pr"><div class="kara-base" style="letter-spacing:16px">아　멘</div><div class="kara-hl" id="pr8" style="letter-spacing:16px">아　멘</div></div><div class="divider"></div><div class="kara-wrap kr"><div class="kara-base" style="letter-spacing:16px">아　멘</div><div class="kara-hl" id="kr8" style="letter-spacing:16px">아　멘</div></div></div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="verse-num" id="verseNum"></div>
 </div>
-```
-
-);
-}
+<script>
+  const MAX_W=1560;
+  function scaleCanvas(){const c=document.getElementById('canvas');const s=Math.min(window.innerWidth/1920,window.innerHeight/1080);const ox=(window.innerWidth-1920*s)/2;const oy=(window.innerHeight-1080*s)/2;c.style.transform=`translate(${ox}px,${oy}px) scale(${s})`;}
+  scaleCanvas();window.addEventListener('resize',scaleCanvas);
+  function fitWraps(){document.querySelectorAll('.kara-wrap').forEach(w=>{const b=w.querySelector('.kara-base');if(!b)return;const wd=b.scrollWidth;w.style.transform=wd>MAX_W?`scaleX(${MAX_W/wd})`:'';});}
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(fitWraps);}else{setTimeout(fitWraps,1500);}
+  const TOTAL=9,DUR=[5500,5000,4000,6500,6000,5500,6500,7000,4500];let timer=null;
+  function startPlay(){document.getElementById('intro').classList.add('hidden');fitWraps();setTimeout(()=>showVerse(0),600);}
+  function showVerse(idx){document.querySelectorAll('.verse').forEach(v=>v.classList.remove('active'));['jp','pr','kr'].forEach(p=>{for(let i=0;i<TOTAL;i++){const el=document.getElementById(p+i);if(el){el.classList.remove('sweep');el.style.transition='none';}}});document.getElementById('v'+idx).classList.add('active');document.getElementById('verseNum').textContent=(idx+1)+' / '+TOTAL;const pf=document.getElementById('progressFill');pf.style.transition='none';pf.style.width='0%';const dur=DUR[idx],sw=dur*0.78;setTimeout(()=>{const jp=document.getElementById('jp'+idx);const pr=document.getElementById('pr'+idx);const kr=document.getElementById('kr'+idx);if(jp){jp.style.transition=`clip-path ${sw}ms linear`;jp.classList.add('sweep');}setTimeout(()=>{if(pr){pr.style.transition=`clip-path ${sw*.9}ms linear`;pr.classList.add('sweep');}},200);setTimeout(()=>{if(kr){kr.style.transition=`clip-path ${sw*.85}ms linear`;kr.classList.add('sweep');}},400);pf.style.transition=`width ${dur}ms linear`;pf.style.width='100%';},60);if(timer)clearTimeout(timer);timer=setTimeout(()=>{const v=document.getElementById('v'+idx);v.style.opacity='0';v.style.transition='opacity 0.6s';setTimeout(()=>{v.style.opacity='';v.style.transition='';if(idx+1<TOTAL)showVerse(idx+1);else document.getElementById('intro').classList.remove('hidden');},600);},dur);}
+</script>
+</body>
+</html>
