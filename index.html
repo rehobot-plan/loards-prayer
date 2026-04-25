@@ -1,0 +1,282 @@
+import { useState, useEffect, useRef } from “react”;
+
+const VERSES = [
+{
+jp: “天にいます私たちの父よ”,
+pr: “텐니 이마스 와타시타치노 치치요”,
+kr: “하늘에 계신 우리 아버지여”,
+dur: 5500,
+},
+{
+jp: “御名をあがめさせたまえ”,
+pr: “미나오 아가메사세타마에”,
+kr: “이름이 거룩히 여김을 받으시오며”,
+dur: 5000,
+},
+{
+jp: “御国を来たらせたまえ”,
+pr: “미쿠니오 키타라세타마에”,
+kr: “나라가 임하시오며”,
+dur: 4000,
+},
+{
+jp: “御心の天になるごとく地にもなさせたまえ”,
+pr: “미코코로노 텐니 나루고토쿠 치니모 나사세타마에”,
+kr: “뜻이 하늘에서 이루어진 것 같이 땅에서도 이루어지이다”,
+dur: 6500,
+},
+{
+jp: “私たちの日ごとの糧を今日もお与えください”,
+pr: “와타시타치노 히고토노 카테오 쿄모 오아타에쿠다사이”,
+kr: “오늘 우리에게 일용할 양식을 주시옵고”,
+dur: 6000,
+},
+{
+jp: “私たちの負い目をお赦しください”,
+pr: “와타시타치노 오이메오 오유루시쿠다사이”,
+kr: “우리 죄를 사하여 주시옵고”,
+dur: 5500,
+},
+{
+jp: “試みに合わせないで悪からお救いください”,
+pr: “코코로미니 아와세나이데 와루카라 오스쿠이쿠다사이”,
+kr: “우리를 시험에 들게 하지 마시옵고 다만 악에서 구하시옵소서”,
+dur: 6500,
+},
+{
+jp: “国と力と栄えとは限りなくあなたのものです”,
+pr: “쿠니토 치카라토 사카에토와 카기리나쿠 아나타노 모노데스”,
+kr: “나라와 권세와 영광이 아버지께 영원히 있사옵나이다”,
+dur: 7000,
+},
+{
+jp: “アーメン”,
+pr: “아　멘”,
+kr: “아　멘”,
+dur: 4500,
+},
+];
+
+function KaraLine({ text, color, sweepDur, delay, started, fontSize }) {
+const [clipPct, setClipPct] = useState(100);
+const raf = useRef(null);
+const startTime = useRef(null);
+
+useEffect(() => {
+setClipPct(100);
+if (!started) return;
+const begin = Date.now() + delay;
+const tick = () => {
+const now = Date.now();
+if (now < begin) { raf.current = requestAnimationFrame(tick); return; }
+if (!startTime.current) startTime.current = now;
+const elapsed = now - startTime.current;
+const pct = Math.max(0, 100 - (elapsed / sweepDur) * 100);
+setClipPct(pct);
+if (pct > 0) raf.current = requestAnimationFrame(tick);
+};
+raf.current = requestAnimationFrame(tick);
+return () => { cancelAnimationFrame(raf.current); startTime.current = null; };
+}, [started, sweepDur, delay]);
+
+return (
+<div style={{ position: “relative”, display: “inline-block”, lineHeight: 1, fontSize }}>
+{/* base */}
+<span style={{ color: “rgba(255,255,255,0.52)”, whiteSpace: “nowrap” }}>{text}</span>
+{/* highlight */}
+<span style={{
+position: “absolute”, top: 0, left: 0,
+color, whiteSpace: “nowrap”,
+clipPath: `inset(0 ${clipPct}% 0 0)`,
+fontSize,
+}}>{text}</span>
+</div>
+);
+}
+
+export default function App() {
+const [phase, setPhase] = useState(“intro”); // intro | playing | done
+const [idx, setIdx] = useState(0);
+const [started, setStarted] = useState(false);
+const [progress, setProgress] = useState(0);
+const [fade, setFade] = useState(1);
+const timerRef = useRef(null);
+const rafRef = useRef(null);
+const startTimeRef = useRef(null);
+
+const verse = VERSES[idx];
+
+function startPlay() {
+setPhase(“playing”);
+setIdx(0);
+setStarted(false);
+setTimeout(() => setStarted(true), 100);
+runProgress(0);
+}
+
+function runProgress(vIdx) {
+const dur = VERSES[vIdx].dur;
+startTimeRef.current = Date.now();
+setProgress(0);
+const tick = () => {
+const elapsed = Date.now() - startTimeRef.current;
+setProgress(Math.min(1, elapsed / dur));
+if (elapsed < dur) rafRef.current = requestAnimationFrame(tick);
+};
+rafRef.current = requestAnimationFrame(tick);
+
+```
+timerRef.current = setTimeout(() => {
+  setFade(0);
+  setTimeout(() => {
+    const next = vIdx + 1;
+    if (next < VERSES.length) {
+      setIdx(next);
+      setStarted(false);
+      setFade(1);
+      setTimeout(() => setStarted(true), 80);
+      runProgress(next);
+    } else {
+      setPhase("done");
+      setFade(1);
+    }
+  }, 600);
+}, dur);
+```
+
+}
+
+useEffect(() => () => {
+clearTimeout(timerRef.current);
+cancelAnimationFrame(rafRef.current);
+}, []);
+
+const sw = verse ? verse.dur * 0.78 : 4000;
+
+return (
+<div style={{
+width: “100vw”, height: “100vh”,
+background: “radial-gradient(ellipse at 50% 60%, #1a1a35 0%, #0a0a14 70%)”,
+display: “flex”, flexDirection: “column”,
+alignItems: “center”, justifyContent: “center”,
+fontFamily: “‘Noto Sans KR’, ‘Noto Sans JP’, sans-serif”,
+overflow: “hidden”, position: “relative”,
+}}>
+
+```
+  {/* 에메랄드 제목 */}
+  <div style={{
+    position: "absolute", top: "5%", left: "50%", transform: "translateX(-50%)",
+    fontSize: "clamp(18px, 3vw, 40px)", fontWeight: 700,
+    color: "#7fffd4", letterSpacing: "0.15em", whiteSpace: "nowrap",
+    textShadow: "0 0 12px rgba(0,255,180,0.9), 0 0 30px rgba(0,255,180,0.6), 0 0 70px rgba(0,220,160,0.4)",
+    animation: "emeraldPulse 2.8s ease-in-out infinite",
+  }}>
+    일본어로 주기도문을 도전해보세요~! 🫶
+  </div>
+
+  {/* 인트로 */}
+  {phase === "intro" && (
+    <div style={{ textAlign: "center", cursor: "pointer" }} onClick={startPlay}>
+      <div style={{ fontSize: "clamp(36px,6vw,80px)", fontWeight: 700, color: "#e8d47a", letterSpacing: "0.1em", marginBottom: 16 }}>주기도문</div>
+      <div style={{ fontSize: "clamp(16px,2.5vw,32px)", color: "rgba(255,255,255,0.32)", letterSpacing: "0.4em", marginBottom: 48 }}>主 の 祈 り</div>
+      <div style={{
+        padding: "14px 52px", border: "1.5px solid rgba(255,255,255,0.3)",
+        borderRadius: 40, fontSize: "clamp(14px,2vw,22px)",
+        color: "rgba(255,255,255,0.6)", letterSpacing: "0.2em",
+        animation: "pulse 2s ease-in-out infinite",
+      }}>▶ &nbsp; 시작하기</div>
+    </div>
+  )}
+
+  {/* 완료 */}
+  {phase === "done" && (
+    <div style={{ textAlign: "center", cursor: "pointer" }} onClick={startPlay}>
+      <div style={{ fontSize: "clamp(28px,4vw,56px)", fontWeight: 700, color: "#e8d47a", marginBottom: 24 }}>アーメン 🙏</div>
+      <div style={{ fontSize: "clamp(14px,2vw,24px)", color: "rgba(255,255,255,0.4)", letterSpacing: "0.3em", marginBottom: 40 }}>다시 도전하기</div>
+      <div style={{
+        padding: "12px 44px", border: "1.5px solid rgba(255,255,255,0.25)",
+        borderRadius: 40, fontSize: "clamp(13px,1.8vw,20px)",
+        color: "rgba(255,255,255,0.5)", letterSpacing: "0.15em",
+      }}>▶ &nbsp; 처음부터</div>
+    </div>
+  )}
+
+  {/* 재생 */}
+  {phase === "playing" && verse && (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center",
+      gap: "clamp(16px,2.5vh,32px)",
+      opacity: fade, transition: "opacity 0.6s ease",
+      width: "90vw", maxWidth: 1400, textAlign: "center",
+    }}>
+      {/* 일본어 */}
+      <KaraLine
+        text={verse.jp}
+        color="#e8d47a"
+        sweepDur={sw}
+        delay={0}
+        started={started}
+        fontSize="clamp(28px, 5.5vw, 82px)"
+      />
+      {/* 발음 */}
+      <KaraLine
+        text={verse.pr}
+        color="rgba(255,200,100,0.95)"
+        sweepDur={sw * 0.9}
+        delay={200}
+        started={started}
+        fontSize="clamp(18px, 3.8vw, 58px)"
+      />
+      {/* 구분선 */}
+      <div style={{ width: 200, height: 1, background: "linear-gradient(to right,transparent,rgba(255,255,255,0.2),transparent)" }} />
+      {/* 한글 */}
+      <KaraLine
+        text={verse.kr}
+        color="rgba(255,255,255,0.95)"
+        sweepDur={sw * 0.85}
+        delay={400}
+        started={started}
+        fontSize="clamp(16px, 3.2vw, 50px)"
+      />
+    </div>
+  )}
+
+  {/* 진행바 */}
+  {phase === "playing" && (
+    <>
+      <div style={{
+        position: "absolute", bottom: "5%", left: "50%", transform: "translateX(-50%)",
+        width: "min(400px, 60vw)", height: 3,
+        background: "rgba(255,255,255,0.1)", borderRadius: 2,
+      }}>
+        <div style={{
+          height: "100%", width: `${progress * 100}%`,
+          background: "linear-gradient(to right,#e8d47a,#f0a060)",
+          borderRadius: 2, transition: "width 0.1s linear",
+        }} />
+      </div>
+      <div style={{
+        position: "absolute", bottom: "calc(5% + 14px)", right: "5%",
+        fontSize: "clamp(12px,1.5vw,18px)", color: "rgba(255,255,255,0.2)", letterSpacing: 2,
+      }}>
+        {idx + 1} / {VERSES.length}
+      </div>
+    </>
+  )}
+
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+    @keyframes emeraldPulse {
+      0%,100% { text-shadow: 0 0 10px rgba(0,255,180,0.8), 0 0 26px rgba(0,255,180,0.5), 0 0 54px rgba(0,220,160,0.3); opacity:.88; }
+      50% { text-shadow: 0 0 16px rgba(0,255,190,1), 0 0 40px rgba(0,255,180,0.75), 0 0 80px rgba(0,220,160,0.55); opacity:1; }
+    }
+    @keyframes pulse {
+      0%,100% { opacity:.35; } 50% { opacity:1; }
+    }
+  `}</style>
+</div>
+```
+
+);
+}
